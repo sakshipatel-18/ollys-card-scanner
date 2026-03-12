@@ -13,10 +13,13 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '10mb' }));  // Allow large base64 images
 
+// ── Serve Static Files from public folder ─────────────────────────────────
+app.use(express.static('public'));
+
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 // ── Health Check ───────────────────────────────────────────────────────────
-app.get('/', (req, res) => {
+app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', service: "Olly's Card Scanner API" });
 });
 
