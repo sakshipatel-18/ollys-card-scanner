@@ -1,0 +1,1094 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Olly's Card Scanner</title>
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0f0e0c;
+      --surface: #1a1916;
+      --surface2: #242320;
+      --border: #2e2c28;
+      --amber: #e8a847;
+      --amber-light: #f0bc6e;
+      --amber-dim: rgba(232, 168, 71, 0.12);
+      --text: #f0ede6;
+      --text-muted: #8a8680;
+      --text-dim: #5a5752;
+      --success: #5cb87a;
+      --error: #e05c5c;
+      --radius: 14px;
+      --radius-sm: 8px;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* Background texture */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 20% -20%, rgba(232,168,71,0.07) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 110%, rgba(232,168,71,0.05) 0%, transparent 50%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .app {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+
+    /* ── Header ── */
+    .header {
+      text-align: center;
+      margin-bottom: 40px;
+    }
+
+    .logo-mark {
+      display: inline-flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+
+    .logo-icon {
+      width: 40px;
+      height: 40px;
+      background: var(--amber);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+
+    .logo-name {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--amber);
+      letter-spacing: 0.02em;
+    }
+
+    .header h1 {
+      font-family: 'Playfair Display', serif;
+      font-size: clamp(32px, 6vw, 52px);
+      font-weight: 900;
+      line-height: 1.1;
+      color: var(--text);
+    }
+
+    .header h1 span { color: var(--amber); }
+
+    .header p {
+      margin-top: 10px;
+      color: var(--text-muted);
+      font-size: 15px;
+      font-weight: 300;
+    }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      width: 100%;
+      max-width: 540px;
+      box-shadow: 0 24px 64px rgba(0,0,0,0.4);
+    }
+
+    .card-title {
+      font-family: 'Playfair Display', serif;
+      font-size: 22px;
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+
+    .card-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 28px;
+    }
+
+    /* ── Form ── */
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .form-group {
+      margin-bottom: 18px;
+    }
+
+    .form-group.full { grid-column: 1 / -1; }
+
+    label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-muted);
+      margin-bottom: 7px;
+    }
+
+    label .opt {
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
+      color: var(--text-dim);
+      margin-left: 4px;
+    }
+
+    input, select {
+      width: 100%;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      padding: 12px 14px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    input:focus, select:focus {
+      border-color: var(--amber);
+      box-shadow: 0 0 0 3px var(--amber-dim);
+    }
+
+    input::placeholder { color: var(--text-dim); }
+
+    select option { background: var(--surface2); }
+
+    /* ── Buttons ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 13px 24px;
+      border-radius: var(--radius-sm);
+      font-family: 'DM Sans', sans-serif;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.2s;
+      text-decoration: none;
+    }
+
+    .btn-primary {
+      background: var(--amber);
+      color: #0f0e0c;
+      width: 100%;
+    }
+
+    .btn-primary:hover { background: var(--amber-light); transform: translateY(-1px); }
+    .btn-primary:active { transform: translateY(0); }
+
+    .btn-primary:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-muted);
+      font-size: 13px;
+    }
+
+    .btn-ghost:hover { border-color: var(--amber); color: var(--amber); }
+
+    /* ── Option cards (scan vs manual) ── */
+    .option-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+    }
+
+    .option-card {
+      background: var(--surface2);
+      border: 2px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 20px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .option-card:hover {
+      border-color: var(--amber);
+      background: var(--amber-dim);
+      transform: translateY(-2px);
+    }
+
+    .option-icon {
+      width: 56px;
+      height: 56px;
+      background: var(--amber-dim);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      border: 1px solid rgba(232,168,71,0.2);
+    }
+
+    .option-label {
+      font-weight: 600;
+      font-size: 15px;
+    }
+
+    .option-desc {
+      font-size: 12px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    /* ── Upload zone ── */
+    .upload-zone {
+      border: 2px dashed var(--border);
+      border-radius: var(--radius);
+      padding: 36px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.25s;
+      position: relative;
+    }
+
+    .upload-zone:hover, .upload-zone.drag-over {
+      border-color: var(--amber);
+      background: var(--amber-dim);
+    }
+
+    .upload-zone input[type="file"] {
+      position: absolute;
+      inset: 0;
+      opacity: 0;
+      cursor: pointer;
+      width: 100%;
+      height: 100%;
+    }
+
+    .upload-icon { font-size: 36px; margin-bottom: 10px; }
+
+    .upload-text {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .upload-text strong { color: var(--amber); }
+
+    .upload-methods {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 18px;
+    }
+
+    .upload-method-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'DM Sans', sans-serif;
+      color: var(--text);
+      font-size: 13px;
+    }
+
+    .upload-method-btn:hover { border-color: var(--amber); background: var(--amber-dim); }
+
+    .upload-method-btn .icon { font-size: 24px; display: block; margin-bottom: 6px; }
+
+    /* ── Preview ── */
+    .preview-img {
+      width: 100%;
+      max-height: 220px;
+      object-fit: contain;
+      border-radius: var(--radius-sm);
+      border: 1px solid var(--border);
+      margin-bottom: 16px;
+      background: var(--surface2);
+    }
+
+    /* ── Review ── */
+    .review-field {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding: 12px 0;
+      border-bottom: 1px solid var(--border);
+      gap: 12px;
+    }
+
+    .review-field:last-child { border-bottom: none; }
+
+    .review-key {
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--text-dim);
+      min-width: 100px;
+      padding-top: 2px;
+    }
+
+    .review-val {
+      font-size: 14px;
+      color: var(--text);
+      text-align: right;
+      flex: 1;
+    }
+
+    .review-val.editable {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 6px 10px;
+      outline: none;
+      font-family: 'DM Sans', sans-serif;
+      font-size: 13px;
+      color: var(--text);
+      transition: border-color 0.2s;
+      text-align: left;
+    }
+
+    .review-val.editable:focus { border-color: var(--amber); }
+
+    /* ── Progress bar ── */
+    .progress-bar {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 32px;
+      justify-content: center;
+    }
+
+    .progress-dot {
+      width: 32px;
+      height: 4px;
+      border-radius: 2px;
+      background: var(--border);
+      transition: background 0.3s;
+    }
+
+    .progress-dot.active { background: var(--amber); }
+    .progress-dot.done { background: rgba(232,168,71,0.4); }
+
+    /* ── Toast ── */
+    .toast {
+      position: fixed;
+      bottom: 28px;
+      left: 50%;
+      transform: translateX(-50%) translateY(80px);
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 40px;
+      padding: 12px 22px;
+      font-size: 14px;
+      font-weight: 500;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+      transition: transform 0.35s cubic-bezier(.16,1,.3,1);
+      z-index: 1000;
+      white-space: nowrap;
+    }
+
+    .toast.show { transform: translateX(-50%) translateY(0); }
+    .toast.success { border-color: var(--success); color: var(--success); }
+    .toast.error { border-color: var(--error); color: var(--error); }
+
+    /* ── Spinner ── */
+    .spinner {
+      width: 18px;
+      height: 18px;
+      border: 2px solid rgba(15,14,12,0.3);
+      border-top-color: #0f0e0c;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: inline-block;
+    }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Camera modal ── */
+    .camera-modal {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.85);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 999;
+      padding: 20px;
+    }
+
+    .camera-inner {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 20px;
+      width: 100%;
+      max-width: 520px;
+      border: 1px solid var(--border);
+    }
+
+    .camera-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+
+    #videoEl {
+      width: 100%;
+      border-radius: var(--radius-sm);
+      background: #000;
+      max-height: 340px;
+      object-fit: cover;
+      display: block;
+    }
+
+    #captureCanvas { display: none; }
+
+    .camera-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 14px;
+    }
+
+    /* ── Success screen ── */
+    .success-screen {
+      text-align: center;
+    }
+
+    .success-icon {
+      width: 72px;
+      height: 72px;
+      background: rgba(92,184,122,0.15);
+      border: 2px solid var(--success);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 32px;
+      margin: 0 auto 20px;
+    }
+
+    /* ── Transitions ── */
+    .page {
+      animation: fadeSlide 0.35s ease forwards;
+    }
+
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateY(16px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── Back link ── */
+    .back-link {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      color: var(--text-muted);
+      font-size: 13px;
+      cursor: pointer;
+      margin-bottom: 20px;
+      width: fit-content;
+      transition: color 0.2s;
+    }
+
+    .back-link:hover { color: var(--amber); }
+
+    .scanning-overlay {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 14px;
+      padding: 28px;
+      color: var(--text-muted);
+      font-size: 14px;
+    }
+
+    .scan-pulse {
+      width: 60px;
+      height: 60px;
+      border: 3px solid var(--amber);
+      border-radius: 50%;
+      animation: pulse 1.2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); opacity: 1; }
+      50%       { transform: scale(1.15); opacity: 0.5; }
+    }
+
+    .user-badge {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: 40px;
+      padding: 8px 16px 8px 8px;
+      font-size: 13px;
+      margin-bottom: 28px;
+    }
+
+    .user-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: var(--amber);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 700;
+      color: #0f0e0c;
+    }
+
+    @media (max-width: 480px) {
+      .card { padding: 24px 20px; }
+      .form-row { grid-template-columns: 1fr; }
+      .option-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+<div class="app" id="app">
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <!-- CAMERA MODAL -->
+  <div class="camera-modal" id="cameraModal" style="display:none;">
+    <div class="camera-inner">
+      <div class="camera-header">
+        <span style="font-weight:600;">📷 Take a Photo</span>
+        <button class="btn-ghost btn" onclick="closeCamera()">✕ Close</button>
+      </div>
+      <video id="videoEl" autoplay playsinline></video>
+      <canvas id="captureCanvas"></canvas>
+      <div class="camera-actions">
+        <button class="btn btn-primary" onclick="capturePhoto()" style="flex:1">
+          📸 Capture
+        </button>
+        <button class="btn btn-ghost" onclick="closeCamera()" style="flex:0 0 auto">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- CONTENT -->
+  <div id="content" style="width:100%; max-width: 540px;"></div>
+
+</div>
+
+<script>
+// ── State ──────────────────────────────────────────────────────────────────
+const BACKEND = 'https://YOUR_RENDER_URL.onrender.com'; // Replace with your Render URL
+
+let state = {
+  page: 'welcome',       // welcome | choose | manual | scan | review | success
+  user: { name: '', email: '' },
+  imageData: null,       // base64 image
+  imageFile: null,
+  formData: {
+    name: '', brandName: '', storeCount: '',
+    city: '', phone: '', email: '', category: ''
+  }
+};
+
+const categories = [
+  'Retail', 'Restaurant / Food', 'Healthcare', 'Finance / Banking',
+  'Technology', 'Automotive', 'Real Estate', 'Education',
+  'Fashion / Apparel', 'Grocery / Supermarket', 'Other'
+];
+
+// ── Init ──────────────────────────────────────────────────────────────────
+function init() {
+  const saved = localStorage.getItem('olly_user');
+  if (saved) {
+    state.user = JSON.parse(saved);
+    if (state.user.name && state.user.email) {
+      render('choose');
+      return;
+    }
+  }
+  render('welcome');
+}
+
+// ── Router ─────────────────────────────────────────────────────────────────
+function render(page) {
+  state.page = page;
+  const el = document.getElementById('content');
+  el.innerHTML = '';
+  const wrapper = document.createElement('div');
+  wrapper.className = 'page';
+
+  switch(page) {
+    case 'welcome':  wrapper.innerHTML = welcomePage(); break;
+    case 'choose':   wrapper.innerHTML = choosePage();  break;
+    case 'manual':   wrapper.innerHTML = manualPage();  break;
+    case 'scan':     wrapper.innerHTML = scanPage();    break;
+    case 'review':   wrapper.innerHTML = reviewPage();  break;
+    case 'success':  wrapper.innerHTML = successPage(); break;
+  }
+
+  el.appendChild(wrapper);
+  bindEvents(page);
+}
+
+// ── Pages ──────────────────────────────────────────────────────────────────
+function headerHTML(step, total) {
+  const dots = Array.from({length: total}, (_, i) =>
+    `<div class="progress-dot ${i < step ? 'done' : i === step ? 'active' : ''}"></div>`
+  ).join('');
+  return `<div class="progress-bar">${dots}</div>`;
+}
+
+function welcomePage() {
+  return `
+    <div class="header">
+      <div class="logo-mark">
+        <div class="logo-icon">🃏</div>
+        <span class="logo-name">Olly's Card Scanner</span>
+      </div>
+      <h1>Scan. <span>Capture.</span><br>Connect.</h1>
+      <p>Digitise business cards in seconds with AI-powered scanning.</p>
+    </div>
+    <div class="card">
+      ${headerHTML(0, 3)}
+      <div class="card-title">Welcome! Who are you?</div>
+      <div class="card-subtitle">Your details are saved locally and never shared.</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Your Name</label>
+          <input type="text" id="uName" placeholder="Jane Smith" value="${state.user.name}" autocomplete="name" />
+        </div>
+        <div class="form-group">
+          <label>Your Email</label>
+          <input type="email" id="uEmail" placeholder="jane@example.com" value="${state.user.email}" autocomplete="email" />
+        </div>
+      </div>
+      <button class="btn btn-primary" id="welcomeNext">
+        Continue →
+      </button>
+    </div>
+  `;
+}
+
+function choosePage() {
+  const initials = state.user.name.split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  return `
+    <div class="header">
+      <div class="logo-mark">
+        <div class="logo-icon">🃏</div>
+        <span class="logo-name">Olly's Card Scanner</span>
+      </div>
+    </div>
+    <div class="card">
+      ${headerHTML(1, 3)}
+      <div class="user-badge">
+        <div class="user-avatar">${initials}</div>
+        <span>${state.user.name} &nbsp;·&nbsp; <span style="color:var(--text-muted)">${state.user.email}</span></span>
+      </div>
+      <div class="card-title">Add a Card</div>
+      <div class="card-subtitle">How would you like to enter the card details?</div>
+      <div class="option-grid">
+        <div class="option-card" id="chooseManual">
+          <div class="option-icon">✍️</div>
+          <div class="option-label">Manual Entry</div>
+          <div class="option-desc">Type in the details yourself, quickly and accurately.</div>
+        </div>
+        <div class="option-card" id="chooseScan">
+          <div class="option-icon">📷</div>
+          <div class="option-label">Scan a Card</div>
+          <div class="option-desc">Upload or photograph a card — AI reads it for you.</div>
+        </div>
+      </div>
+      <div style="margin-top:20px">
+        <button class="btn btn-ghost" onclick="resetUser()" style="font-size:12px">← Change account</button>
+      </div>
+    </div>
+  `;
+}
+
+function manualPage() {
+  const catOptions = categories.map(c =>
+    `<option value="${c}" ${state.formData.category === c ? 'selected':''}>${c}</option>`
+  ).join('');
+  return `
+    <div class="card">
+      ${headerHTML(1, 3)}
+      <div class="back-link" onclick="render('choose')">← Back</div>
+      <div class="card-title">Manual Entry</div>
+      <div class="card-subtitle">Fill in the card details below.</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>Contact Name</label>
+          <input type="text" id="fName" placeholder="John Doe" value="${state.formData.name}" />
+        </div>
+        <div class="form-group">
+          <label>Brand Name</label>
+          <input type="text" id="fBrand" placeholder="Acme Corp" value="${state.formData.brandName}" />
+        </div>
+        <div class="form-group">
+          <label>Store Count</label>
+          <input type="text" id="fStoreCount" placeholder="e.g. 12" value="${state.formData.storeCount}" />
+        </div>
+        <div class="form-group">
+          <label>City</label>
+          <input type="text" id="fCity" placeholder="Mumbai" value="${state.formData.city}" />
+        </div>
+        <div class="form-group">
+          <label>Phone Number</label>
+          <input type="tel" id="fPhone" placeholder="9876543210" value="${state.formData.phone}" maxlength="15" inputmode="numeric" />
+        </div>
+        <div class="form-group">
+          <label>Email <span class="opt">(optional)</span></label>
+          <input type="email" id="fEmail" placeholder="contact@brand.com" value="${state.formData.email}" />
+        </div>
+        <div class="form-group full">
+          <label>Category</label>
+          <select id="fCategory">
+            <option value="">Select a category…</option>
+            ${catOptions}
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="manualSubmit">
+        Review & Submit →
+      </button>
+    </div>
+  `;
+}
+
+function scanPage() {
+  return `
+    <div class="card">
+      ${headerHTML(1, 3)}
+      <div class="back-link" onclick="render('choose')">← Back</div>
+      <div class="card-title">Scan a Card</div>
+      <div class="card-subtitle">Upload an image or take a photo — our AI will extract the details.</div>
+      <div class="upload-methods">
+        <label class="upload-method-btn" for="fileInput">
+          <span class="icon">📁</span>
+          Upload from Device
+          <input type="file" id="fileInput" accept="image/*" style="display:none" onchange="handleFileUpload(event)" />
+        </label>
+        <button class="upload-method-btn" id="cameraBtn">
+          <span class="icon">📷</span>
+          Take a Photo
+        </button>
+      </div>
+      <div id="scanPreviewArea"></div>
+      <button class="btn btn-primary" id="scanProceed" style="display:none">
+        Scan Card →
+      </button>
+    </div>
+  `;
+}
+
+function reviewPage() {
+  const fd = state.formData;
+  const fields = [
+    ['Contact Name', 'name'],
+    ['Brand Name',   'brandName'],
+    ['Store Count',  'storeCount'],
+    ['City',         'city'],
+    ['Phone',        'phone'],
+    ['Email',        'email'],
+    ['Category',     'category'],
+  ];
+
+  const rows = fields.map(([label, key]) => `
+    <div class="review-field">
+      <div class="review-key">${label}</div>
+      <input class="review-val editable" data-key="${key}" value="${escHtml(fd[key] || '')}" placeholder="—" />
+    </div>
+  `).join('');
+
+  return `
+    <div class="card">
+      ${headerHTML(2, 3)}
+      <div class="back-link" onclick="render(state.prevPage || 'choose')">← Back</div>
+      <div class="card-title">Review Details</div>
+      <div class="card-subtitle">Edit any fields before submitting.</div>
+      ${state.imageData ? `<img class="preview-img" src="${state.imageData}" alt="Card" />` : ''}
+      <div id="reviewFields">${rows}</div>
+      <br/>
+      <button class="btn btn-primary" id="submitBtn">Submit Card ✓</button>
+    </div>
+  `;
+}
+
+function successPage() {
+  return `
+    <div class="card success-screen">
+      <div class="success-icon">✓</div>
+      <div class="card-title">Card Saved!</div>
+      <p style="color:var(--text-muted); font-size:14px; margin:10px 0 28px;">
+        The card details have been recorded successfully.
+      </p>
+      <button class="btn btn-primary" onclick="addAnother()">Add Another Card</button>
+      <br/><br/>
+      <button class="btn btn-ghost" onclick="render('choose')">Back to Home</button>
+    </div>
+  `;
+}
+
+// ── Events ─────────────────────────────────────────────────────────────────
+function bindEvents(page) {
+  if (page === 'welcome') {
+    document.getElementById('welcomeNext').addEventListener('click', () => {
+      const name  = document.getElementById('uName').value.trim();
+      const email = document.getElementById('uEmail').value.trim();
+      if (!name)  return toast('Please enter your name', 'error');
+      if (!isValidEmail(email)) return toast('Please enter a valid email', 'error');
+      state.user = { name, email };
+      localStorage.setItem('olly_user', JSON.stringify(state.user));
+      render('choose');
+    });
+  }
+
+  if (page === 'choose') {
+    document.getElementById('chooseManual').addEventListener('click', () => render('manual'));
+    document.getElementById('chooseScan').addEventListener('click',   () => render('scan'));
+  }
+
+  if (page === 'manual') {
+    document.getElementById('fPhone').addEventListener('input', e => {
+      e.target.value = e.target.value.replace(/\D/g, '');
+    });
+    document.getElementById('manualSubmit').addEventListener('click', () => {
+      const data = {
+        name:       document.getElementById('fName').value.trim(),
+        brandName:  document.getElementById('fBrand').value.trim(),
+        storeCount: document.getElementById('fStoreCount').value.trim(),
+        city:       document.getElementById('fCity').value.trim(),
+        phone:      document.getElementById('fPhone').value.trim(),
+        email:      document.getElementById('fEmail').value.trim(),
+        category:   document.getElementById('fCategory').value,
+      };
+      if (!data.name)      return toast('Contact name is required', 'error');
+      if (!data.brandName) return toast('Brand name is required', 'error');
+      if (!data.city)      return toast('City is required', 'error');
+      if (data.phone && !/^\d+$/.test(data.phone)) return toast('Phone must contain digits only', 'error');
+      state.formData = data;
+      state.imageData = null;
+      state.prevPage = 'manual';
+      render('review');
+    });
+  }
+
+  if (page === 'scan') {
+    document.getElementById('cameraBtn').addEventListener('click', openCamera);
+
+    const btn = document.getElementById('scanProceed');
+    if (btn) btn.addEventListener('click', performScan);
+  }
+
+  if (page === 'review') {
+    document.getElementById('submitBtn').addEventListener('click', submitCard);
+  }
+}
+
+// ── File upload ────────────────────────────────────────────────────────────
+function handleFileUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  state.imageFile = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    state.imageData = e.target.result;
+    showScanPreview();
+  };
+  reader.readAsDataURL(file);
+}
+
+function showScanPreview() {
+  const area = document.getElementById('scanPreviewArea');
+  if (!area) return;
+  area.innerHTML = `<img class="preview-img" src="${state.imageData}" alt="Card preview" />`;
+  const btn = document.getElementById('scanProceed');
+  if (btn) btn.style.display = 'flex';
+}
+
+// ── Camera ─────────────────────────────────────────────────────────────────
+let cameraStream = null;
+
+async function openCamera() {
+  const modal = document.getElementById('cameraModal');
+  modal.style.display = 'flex';
+  try {
+    cameraStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+    document.getElementById('videoEl').srcObject = cameraStream;
+  } catch(e) {
+    toast('Camera not available', 'error');
+    closeCamera();
+  }
+}
+
+function closeCamera() {
+  if (cameraStream) { cameraStream.getTracks().forEach(t => t.stop()); cameraStream = null; }
+  document.getElementById('cameraModal').style.display = 'none';
+}
+
+function capturePhoto() {
+  const video  = document.getElementById('videoEl');
+  const canvas = document.getElementById('captureCanvas');
+  canvas.width  = video.videoWidth;
+  canvas.height = video.videoHeight;
+  canvas.getContext('2d').drawImage(video, 0, 0);
+  state.imageData = canvas.toDataURL('image/jpeg', 0.92);
+  closeCamera();
+  showScanPreview();
+}
+
+// ── AI Scan ────────────────────────────────────────────────────────────────
+async function performScan() {
+  if (!state.imageData) return toast('Please upload or capture an image first', 'error');
+
+  const btn = document.getElementById('scanProceed');
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span> Scanning…`;
+
+  const area = document.getElementById('scanPreviewArea');
+  area.innerHTML = `
+    <div class="scanning-overlay">
+      <div class="scan-pulse"></div>
+      Reading your card with AI…
+    </div>
+  `;
+
+  try {
+    const res = await fetch(`${BACKEND}/api/scan`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ image: state.imageData })
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Scan failed');
+    state.formData = {
+      name:       json.name       || '',
+      brandName:  json.brandName  || '',
+      storeCount: json.storeCount || '',
+      city:       json.city       || '',
+      phone:      json.phone      || '',
+      email:      json.email      || '',
+      category:   json.category   || '',
+    };
+    state.prevPage = 'scan';
+    render('review');
+  } catch(e) {
+    toast(e.message || 'Scanning failed', 'error');
+    btn.disabled = false;
+    btn.innerHTML = 'Scan Card →';
+    showScanPreview();
+  }
+}
+
+// ── Submit ─────────────────────────────────────────────────────────────────
+async function submitCard() {
+  // Collect edited values from review fields
+  document.querySelectorAll('[data-key]').forEach(el => {
+    state.formData[el.dataset.key] = el.value.trim();
+  });
+
+  const btn = document.getElementById('submitBtn');
+  btn.disabled = true;
+  btn.innerHTML = `<span class="spinner"></span> Submitting…`;
+
+  try {
+    const payload = {
+      ...state.formData,
+      submittedBy:    state.user.name,
+      submitterEmail: state.user.email,
+      timestamp:      new Date().toISOString()
+    };
+
+    const res  = await fetch(`${BACKEND}/api/submit`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    });
+    const json = await res.json();
+    if (!res.ok) throw new Error(json.error || 'Submit failed');
+
+    render('success');
+  } catch(e) {
+    toast(e.message || 'Submission failed', 'error');
+    btn.disabled = false;
+    btn.innerHTML = 'Submit Card ✓';
+  }
+}
+
+// ── Helpers ─────────────────────────────────────────────────────────────────
+function resetUser() {
+  localStorage.removeItem('olly_user');
+  state.user = { name:'', email:'' };
+  render('welcome');
+}
+
+function addAnother() {
+  state.formData   = { name:'', brandName:'', storeCount:'', city:'', phone:'', email:'', category:'' };
+  state.imageData  = null;
+  render('choose');
+}
+
+function isValidEmail(e) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
+}
+
+function escHtml(str) {
+  return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+let toastTimer;
+function toast(msg, type = 'info') {
+  const el = document.getElementById('toast');
+  const icon = type === 'success' ? '✓' : type === 'error' ? '✕' : 'ℹ';
+  el.className = `toast ${type}`;
+  el.innerHTML = `${icon} ${msg}`;
+  clearTimeout(toastTimer);
+  requestAnimationFrame(() => { el.classList.add('show'); });
+  toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+// ── Boot ──────────────────────────────────────────────────────────────────
+init();
+</script>
+</body>
+</html>

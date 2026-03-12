@@ -1,0 +1,15 @@
+services:
+  - type: web
+    name: ollys-card-scanner-api
+    runtime: node
+    buildCommand: cd backend && npm install
+    startCommand: cd backend && npm start
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false      # Set this manually in the Render dashboard
+      - key: GOOGLE_APPS_SCRIPT_URL
+        sync: false      # Set this manually in the Render dashboard
+      - key: FRONTEND_URL
+        sync: false      # Optional: your Netlify/GitHub Pages URL
+      - key: NODE_ENV
+        value: production
